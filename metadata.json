@@ -1,0 +1,17 @@
+{
+  "name": "Textpad",
+  "category": "utilities",
+  "title": {
+    "en_EN": "Textpad"
+  },
+  "description": {
+    "en_EN": "Textpad"
+  },
+  "mimes": [
+    "^text\/(.*)",
+    "application\/json"
+  ],
+  "files": [
+    "index.js"
+  ]
+}
