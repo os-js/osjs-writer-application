@@ -28,8 +28,6 @@
  * @licence Simplified BSD License
  */
 
-import metadata from './metadata.json';
-
 import {
   h,
   app
@@ -51,14 +49,14 @@ const view = (core, proc, win) =>
 const actions = (core, proc, win) => {
   return {
     setContents: ({text, filename}) => state => {
-      win.setTitle(`${metadata.title.en_EN} - ${filename}`);
+      win.setTitle(`${proc.metadata.title.en_EN} - ${filename}`);
 
       return {text};
     }
   };
 };
 
-OSjs.make('osjs/packages').register(metadata, (core, args, options) => {
+OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) => {
   const proc = core.make('osjs/application', {
     args,
     options,
