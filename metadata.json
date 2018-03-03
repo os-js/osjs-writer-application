@@ -9,7 +9,8 @@
   },
   "mimes": [
     "^text\/(.*)",
-    "application\/json"
+    "application\/json",
+    "application\/javascript"
   ],
   "files": [
     "index.js"
