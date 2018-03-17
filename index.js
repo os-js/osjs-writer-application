@@ -124,7 +124,8 @@ OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) =
         core.make('osjs/dialog', 'file', {
           type,
           filename: basename(proc.args.path),
-          path: pathname(proc.args.path)
+          path: pathname(proc.args.path),
+          mime: metadata.mimes
         }, (btn, item) => {
           if (btn === 'ok') {
             callback(item);
