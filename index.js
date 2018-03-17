@@ -36,27 +36,46 @@ import {
 import {
   Box,
   BoxContainer,
-  Input
+  Input,
+  Menubar
 } from '@osjs/gui';
 
-const view = (core, proc, win) =>
-  (state, actions) => h(Box, {orientation: 'vertical'}, [
+const basename = path => path.split('/').reverse()[0];
+const pathname = path => {
+  const split = path.split('/');
+  split.splice(split.length - 1, 1);
+  return split.join('/');
+};
+
+const view = (core, proc, win, bus) =>
+  (state, actions) => h(Box, {}, [
+      h(Menubar, {items: state.menu, onclick: (item, index, ev) => actions.menu({item, index, ev})}),
       h(BoxContainer, {grow: 1}, [
-        h(Input, {type: 'textarea', value: state.text, fill: true})
+        h(Input, {type: 'textarea', value: state.text, class: 'osjs-gui-absolute-fill'})
       ]),
     ]);
 
-const actions = (core, proc, win) => {
+const actions = (core, proc, win, bus) => {
   return {
-    setContents: ({text, filename}) => state => {
-      win.setTitle(`${proc.metadata.title.en_EN} - ${filename}`);
-
-      return {text};
+    setText: text => state => ({text}),
+    menu: ({item, index, ev}) => state => {
+      core.make('osjs/contextmenu').show({
+        menu: [
+          {label: 'New', onclick: () => bus.emit('newFile')},
+          {label: 'Open', onclick: () => bus.emit('openFile')},
+          {label: 'Save', onclick: () => bus.emit('saveFile')},
+          {label: 'Save As...', onclick: () => bus.emit('saveFileAs')},
+          {label: 'Quit', onclick: () => proc.destroy()}
+        ],
+        position: ev.target
+      });
     }
   };
 };
 
 OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) => {
+  const bus = core.make('osjs/event-handler', 'Textpad');
+
   const proc = core.make('osjs/application', {
     args,
     options,
@@ -64,7 +83,10 @@ OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) =
   });
 
   const state = {
-    text: ''
+    text: '',
+    menu: [
+      {label: 'File'}
+    ],
   };
 
   proc.createWindow({
@@ -76,19 +98,67 @@ OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) =
     .on('render', (win) => win.focus())
     .render(($content, win) => {
       const a = app(state,
-          actions(core, proc, win),
-          view(core, proc, win),
+          actions(core, proc, win, bus),
+          view(core, proc, win, bus),
           $content);
 
-          if (args.file) {
-            core.make('osjs/vfs')
-              .readfile(args.file.path)
-              .then(contents => a.setContents({
-                filename: args.file.filename,
-                text: contents
-              }));
+      const setTitle = title =>
+        win.setTitle(`${proc.metadata.title.en_EN} - ${title}`);
+
+      const save = async (item) => {
+        if (item) {
+          proc.args.path = item.path;
+        }
+
+        if (!proc.args.path) {
+          return;
+        }
+
+        const contents = $content.querySelector('textarea').value;
+
+        core.make('osjs/vfs')
+          .writefile(proc.args.path, contents);
+      };
+
+      const createDialog = (type, callback) => {
+        core.make('osjs/dialog', 'file', {
+          type,
+          filename: basename(proc.args.path),
+          path: pathname(proc.args.path)
+        }, (btn, item) => {
+          if (btn === 'ok') {
+            callback(item);
           }
-    })
+        });
+      };
+
+      bus.on('readFile', (file) => {
+        if (file) {
+          core.make('osjs/vfs')
+            .readfile(file.path)
+            .then(contents => {
+              a.setText(contents);
+              setTitle(file.filename)
+            });
+        }
+      });
+
+      bus.on('newFile', () => {
+        proc.args.path = '/New file.txt';
+        setTitle('New file.txt');
+        a.setText('');
+      });
+
+      bus.on('openFile', () => createDialog('open', (item) => bus.emit('readFile', item)));
+      bus.on('saveFileAs', () => createDialog('save', (item) => bus.emit('saveFile', item)));
+      bus.on('saveFile', (item) => save(item));
+
+      if (args.file) {
+        bus.emit('readFile', args.file);
+      } else {
+        bus.emit('newFile');
+      }
+    });
 
   return proc;
 });
