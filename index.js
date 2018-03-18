@@ -121,12 +121,16 @@ OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) =
       };
 
       const createDialog = (type, callback) => {
+        win.setState('loading', true);
+
         core.make('osjs/dialog', 'file', {
           type,
           filename: basename(proc.args.path),
           path: pathname(proc.args.path),
           mime: metadata.mimes
         }, (btn, item) => {
+          win.setState('loading', false);
+
           if (btn === 'ok') {
             callback(item);
           }
