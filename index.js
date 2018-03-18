@@ -107,6 +107,7 @@ OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) =
 
       const save = async (item) => {
         if (item) {
+          setTitle(item.filename);
           proc.args.path = item.path;
         }
 
