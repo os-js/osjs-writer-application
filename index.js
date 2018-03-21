@@ -51,7 +51,12 @@ const view = (core, proc, win, bus) =>
   (state, actions) => h(Box, {}, [
       h(Menubar, {items: state.menu, onclick: (item, index, ev) => actions.menu({item, index, ev})}),
       h(BoxContainer, {grow: 1}, [
-        h(Input, {type: 'textarea', value: state.text, class: 'osjs-gui-absolute-fill'})
+        h(Input, {
+          type: 'textarea',
+          value: state.text,
+          class: 'osjs-gui-absolute-fill',
+          oninput: value => actions.setText(value)
+        })
       ]),
     ]);
 
