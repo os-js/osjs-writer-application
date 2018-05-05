@@ -79,10 +79,11 @@ const actions = (core, proc, win, bus) => {
 };
 
 OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) => {
+  const defaultPath = 'osjs:/New file.txt';
   const bus = core.make('osjs/event-handler', 'Textpad');
 
   const proc = core.make('osjs/application', {
-    args,
+    args: Object.assign({path: defaultPath}, args || {}),
     options,
     metadata
   });
@@ -155,7 +156,7 @@ OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) =
       });
 
       bus.on('newFile', () => {
-        proc.args.path = '/New file.txt';
+        proc.args.path = defaultPath;
         setTitle('New file.txt');
         a.setText('');
       });
