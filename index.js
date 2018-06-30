@@ -35,8 +35,7 @@ import {
 
 import {
   Box,
-  BoxContainer,
-  Input,
+  TextareaField,
   Menubar
 } from '@osjs/gui';
 
@@ -49,16 +48,13 @@ const pathname = path => {
 
 const view = (core, proc, win, bus) =>
   (state, actions) => h(Box, {}, [
-      h(Menubar, {items: state.menu, onclick: (item, index, ev) => actions.menu({item, index, ev})}),
-      h(BoxContainer, {grow: 1}, [
-        h(Input, {
-          type: 'textarea',
-          value: state.text,
-          class: 'osjs-gui-absolute-fill',
-          oninput: value => actions.setText(value)
-        })
-      ]),
-    ]);
+    h(Menubar, {items: state.menu, onclick: (item, index, ev) => actions.menu({item, index, ev})}),
+    h(TextareaField, {
+      box: {grow: 1},
+      value: state.text,
+      oninput: (ev, value) => actions.setText(value)
+    })
+  ]);
 
 const actions = (core, proc, win, bus) => {
   return {
