@@ -36,7 +36,8 @@ import {
 import {
   Box,
   TextareaField,
-  Menubar
+  Menubar,
+  MenubarItem
 } from '@osjs/gui';
 
 const basename = path => path.split('/').reverse()[0];
@@ -48,7 +49,11 @@ const pathname = path => {
 
 const view = (core, proc, win, bus) =>
   (state, actions) => h(Box, {}, [
-    h(Menubar, {items: state.menu, onclick: (item, index, ev) => actions.menu({item, index, ev})}),
+    h(Menubar, {}, [
+      h(MenubarItem, {
+        onclick: ev => actions.menu(ev)
+      }, 'File')
+    ]),
     h(TextareaField, {
       box: {grow: 1},
       value: state.text,
@@ -59,7 +64,7 @@ const view = (core, proc, win, bus) =>
 const actions = (core, proc, win, bus) => {
   return {
     setText: text => state => ({text}),
-    menu: ({item, index, ev}) => state => {
+    menu: (ev) => state => {
       core.make('osjs/contextmenu').show({
         menu: [
           {label: 'New', onclick: () => bus.emit('newFile')},
