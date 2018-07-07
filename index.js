@@ -15,7 +15,7 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR ha PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
  * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -28,150 +28,97 @@
  * @licence Simplified BSD License
  */
 
-import {
-  h,
-  app
-} from 'hyperapp';
+import {h, app} from 'hyperapp';
+import {Box, TextareaField, Menubar, MenubarItem} from '@osjs/gui';
+import {BasicApplication} from '@osjs/common';
 
-import {
-  Box,
-  TextareaField,
-  Menubar,
-  MenubarItem
-} from '@osjs/gui';
+// File menu
+const createMenu = (current, actions) => ([
+  {label: 'New', onclick: () => actions.menuNew()},
+  {label: 'Open', onclick: () => actions.menuOpen()},
+  {label: 'Save', disabled: !current, onclick: () => actions.menuSave()},
+  {label: 'Save As...', onclick: () => actions.menuSaveAs()},
+  {label: 'Quit', onclick: () => actions.menuQuit()}
+]);
 
-const basename = path => path.split('/').reverse()[0];
-const pathname = path => {
-  const split = path.split('/');
-  split.splice(split.length - 1, 1);
-  return split.join('/');
-};
+// OS.js application
+const createApplication = (core, proc, win, $content) => {
+  const vfs = core.make('osjs/vfs');
 
-const view = (core, proc, win, bus) =>
-  (state, actions) => h(Box, {}, [
-    h(Menubar, {}, [
-      h(MenubarItem, {
-        onclick: ev => actions.menu(ev)
-      }, 'File')
-    ]),
-    h(TextareaField, {
-      box: {grow: 1},
-      value: state.text,
-      oninput: (ev, value) => actions.setText(value)
-    })
-  ]);
-
-const actions = (core, proc, win, bus) => {
-  return {
-    setText: text => state => ({text}),
-    menu: (ev) => state => {
-      core.make('osjs/contextmenu').show({
-        menu: [
-          {label: 'New', onclick: () => bus.emit('newFile')},
-          {label: 'Open', onclick: () => bus.emit('openFile')},
-          {label: 'Save', onclick: () => bus.emit('saveFile')},
-          {label: 'Save As...', onclick: () => bus.emit('saveFileAs')},
-          {label: 'Quit', onclick: () => proc.destroy()}
-        ],
-        position: ev.target
-      });
-    }
-  };
-};
-
-OSjs.make('osjs/packages').register('Textpad', (core, args, options, metadata) => {
-  const defaultPath = 'osjs:/New file.txt';
-  const bus = core.make('osjs/event-handler', 'Textpad');
-
-  const proc = core.make('osjs/application', {
-    args: Object.assign({path: defaultPath}, args || {}),
-    options,
-    metadata
+  // BasicApplication
+  const basic = new BasicApplication(core, proc, win, {
+    defaultFilename: 'New File.txt'
   });
 
-  const state = {
-    text: '',
-    menu: [
-      {label: 'File'}
-    ],
-  };
+  // Hyperapp
+  const ha = app({
+    text: ''
+  }, {
+    setText: text => state => ({text}),
 
+    save: () => state => {
+      if (proc.args.path) {
+        const contents = $content.querySelector('textarea').value;
+        vfs.writefile(proc.args.path, contents);
+      }
+    },
+
+    load: item => (state, actions) => {
+      vfs.readfile(item.path)
+        .then(contents => actions.setText(contents))
+        .catch(error => console.error(error)); // FIXME: Dialog
+    },
+
+    menu: ev => (state, actions) => {
+      core.make('osjs/contextmenu').show({
+        position: ev.target,
+        menu: createMenu(proc.args.path, actions)
+      });
+    },
+
+    menuNew: () => state => basic.createNew(),
+    menuOpen: () => state => basic.createOpenDialog(),
+    menuSave: () => (state, actions) => actions.save(),
+    menuSaveAs: () => state => basic.createSaveDialog(),
+    menuQuit: () => state => proc.destroy()
+  }, (state, actions) => {
+    return h(Box, {}, [
+      h(Menubar, {}, [
+        h(MenubarItem, {
+          onclick: ev => actions.menu(ev)
+        }, 'File')
+      ]),
+      h(TextareaField, {
+        box: {grow: 1},
+        value: state.text,
+        oninput: (ev, value) => actions.setText(value)
+      })
+    ]);
+  }, $content);
+
+
+  proc.on('destroy', () => basic.destroy());
+  basic.on('new-file', () => ha.setText(''));
+  basic.on('save-file', ha.save);
+  basic.on('open-file', ha.load);
+  basic.init();
+};
+
+// OS.js window
+const createMainWindow = (core, proc) => {
   proc.createWindow({
     id: 'TextpadWindow',
-    title: metadata.title.en_EN,
     dimension: {width: 400, height: 400}
   })
     .on('destroy', () => proc.destroy())
     .on('render', (win) => win.focus())
-    .render(($content, win) => {
-      const a = app(state,
-          actions(core, proc, win, bus),
-          view(core, proc, win, bus),
-          $content);
+    .render(($content, win) => createApplication(core, proc, win, $content));
+};
 
-      const setTitle = title =>
-        win.setTitle(`${proc.metadata.title.en_EN} - ${title}`);
-
-      const save = async (item) => {
-        if (item) {
-          setTitle(item.filename);
-          proc.args.path = item.path;
-        }
-
-        if (!proc.args.path) {
-          return;
-        }
-
-        const contents = $content.querySelector('textarea').value;
-
-        core.make('osjs/vfs')
-          .writefile(proc.args.path, contents);
-      };
-
-      const createDialog = (type, callback) => {
-        win.setState('loading', true);
-
-        core.make('osjs/dialog', 'file', {
-          type,
-          filename: basename(proc.args.path),
-          path: pathname(proc.args.path),
-          mime: metadata.mimes
-        }, (btn, item) => {
-          win.setState('loading', false);
-
-          if (btn === 'ok') {
-            callback(item);
-          }
-        });
-      };
-
-      bus.on('readFile', (file) => {
-        if (file) {
-          core.make('osjs/vfs')
-            .readfile(file.path)
-            .then(contents => {
-              a.setText(contents);
-              setTitle(file.filename)
-            });
-        }
-      });
-
-      bus.on('newFile', () => {
-        proc.args.path = defaultPath;
-        setTitle('New file.txt');
-        a.setText('');
-      });
-
-      bus.on('openFile', () => createDialog('open', (item) => bus.emit('readFile', item)));
-      bus.on('saveFileAs', () => createDialog('save', (item) => bus.emit('saveFile', item)));
-      bus.on('saveFile', (item) => save(item));
-
-      if (args.file) {
-        bus.emit('readFile', args.file);
-      } else {
-        bus.emit('newFile');
-      }
-    });
-
+const createProcess = (core, args, options, metadata) => {
+  const proc = core.make('osjs/application', {args, options, metadata});
+  createMainWindow(core, proc);
   return proc;
-});
+};
+
+OSjs.make('osjs/packages').register('Textpad', createProcess);
