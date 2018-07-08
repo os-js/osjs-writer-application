@@ -57,9 +57,9 @@ const createApplication = (core, proc, win, $content) => {
     setText: text => state => ({text}),
 
     save: () => state => {
-      if (proc.args.path) {
+      if (proc.args.file) {
         const contents = $content.querySelector('textarea').value;
-        vfs.writefile(proc.args.path, contents);
+        vfs.writefile(proc.args.file.path, contents);
       }
     },
 
@@ -72,7 +72,7 @@ const createApplication = (core, proc, win, $content) => {
     menu: ev => (state, actions) => {
       core.make('osjs/contextmenu').show({
         position: ev.target,
-        menu: createMenu(proc.args.path, actions)
+        menu: createMenu(proc.args.file, actions)
       });
     },
 
