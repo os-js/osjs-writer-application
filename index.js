@@ -59,12 +59,12 @@ const createApplication = (core, proc, win, $content) => {
     save: () => state => {
       if (proc.args.file) {
         const contents = $content.querySelector('textarea').value;
-        vfs.writefile(proc.args.file.path, contents);
+        vfs.writefile(proc.args.file, contents);
       }
     },
 
     load: item => (state, actions) => {
-      vfs.readfile(item.path)
+      vfs.readfile(item)
         .then(contents => actions.setText(contents))
         .catch(error => console.error(error)); // FIXME: Dialog
     },
