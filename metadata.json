@@ -1,6 +1,7 @@
 {
   "name": "Textpad",
   "category": "utilities",
+  "icon": "icon.png",
   "title": {
     "en_EN": "Textpad"
   },
