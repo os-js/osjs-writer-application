@@ -18,5 +18,4 @@ This is the Textpad Application for OS.js v3
 ```bash
 npm install --save @osjs/textpad-application
 npm run package:discover
-npm run build:manifest
 ```
