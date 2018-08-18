@@ -13,6 +13,8 @@
 
 This is the Textpad Application for OS.js v3
 
+![Screenshot](https://raw.githubusercontent.com/os-js/osjs-textpad-application/master/screenshot.png)
+
 ## Installation
 
 ```bash
