@@ -3,10 +3,12 @@
   "category": "utilities",
   "icon": "icon.png",
   "title": {
-    "en_EN": "Textpad"
+    "en_EN": "Textpad",
+    "fr_FR": "Bloc-notes" 
   },
   "description": {
-    "en_EN": "Textpad"
+    "en_EN": "Textpad",
+    "fr_FR": "Bloc-notes"
   },
   "mimes": [
     "^text\/(.*)",
