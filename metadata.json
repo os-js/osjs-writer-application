@@ -4,10 +4,12 @@
   "icon": "icon.png",
   "title": {
     "en_EN": "Textpad",
-    "fr_FR": "Bloc-notes" 
+    "nb_NO": "Tekstblokk",
+    "fr_FR": "Bloc-notes"
   },
   "description": {
-    "en_EN": "Textpad",
+    "en_EN": "Edit text files",
+    "nb_NO": "Redigèr tekstfiler",
     "fr_FR": "Bloc-notes"
   },
   "mimes": [
