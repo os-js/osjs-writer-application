@@ -97,6 +97,14 @@ const createApplication = (core, proc, win, $content) => {
   }, $content);
 
 
+  win.on('drop', (ev, data) => {
+    if (data.isFile && data.mime) {
+      const found = proc.metadata.mimes.find(m => (new RegExp(m)).test(data.mime));
+      if (found) {
+        basic.open(data);
+      }
+    }
+  });
   proc.on('destroy', () => basic.destroy());
   basic.on('new-file', () => ha.setText(''));
   basic.on('save-file', ha.save);
