@@ -21,7 +21,6 @@ module.exports = {
     rules: [
       {
         test: /\.js$/,
-        exclude: /(node_modules|bower_components)\/(?!@osjs)/,
         use: {
           loader: 'babel-loader'
         }
