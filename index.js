@@ -29,8 +29,7 @@
  */
 
 import {h, app} from 'hyperapp';
-import {Box, TextareaField, Menubar, MenubarItem} from '@osjs/gui/index.js';
-import {BasicApplication} from '@osjs/common';
+import {Box, TextareaField, Menubar, MenubarItem} from '@osjs/gui';
 
 // File menu
 const createMenu = (current, actions) => ([
@@ -44,9 +43,7 @@ const createMenu = (current, actions) => ([
 // OS.js application
 const createApplication = (core, proc, win, $content) => {
   const vfs = core.make('osjs/vfs');
-
-  // BasicApplication
-  const basic = new BasicApplication(core, proc, win, {
+  const basic = core.make('osjs/basic-application', proc, win, {
     defaultFilename: 'New File.txt'
   });
 
