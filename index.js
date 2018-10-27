@@ -29,7 +29,7 @@
  */
 
 import {h, app} from 'hyperapp';
-import {Box, TextareaField, Menubar, MenubarItem} from '@osjs/gui';
+import {Box, TextareaField, Menubar, MenubarItem} from '@osjs/gui/index.js';
 import {BasicApplication} from '@osjs/common';
 
 // File menu
