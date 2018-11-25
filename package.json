@@ -1,6 +1,6 @@
 {
   "name": "@osjs/textpad-application",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "OS.js v3 Textpad Application",
   "files": [
     "dist/",
