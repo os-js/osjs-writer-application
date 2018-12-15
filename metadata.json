@@ -9,7 +9,9 @@
     "en_EN": "Edit richtext documents"
   },
   "mimes": [
-    "^text\/(.*)"
+    "^text\/(.*)",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ],
   "files": [
     "main.js"

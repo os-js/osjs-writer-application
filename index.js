@@ -302,7 +302,7 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     });
 
   const basic = core.make('osjs/basic-application', proc, win, {
-    defaultFilename: 'New Document.txt'
+    defaultFilename: 'New Document.doc'
   });
 
   const createDialog = (name, args, callback) =>
