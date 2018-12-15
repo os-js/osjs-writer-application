@@ -1,0 +1,17 @@
+{
+  "name": "Writer",
+  "category": "office",
+  "icon": "icon.png",
+  "title": {
+    "en_EN": "Writer"
+  },
+  "description": {
+    "en_EN": "Edit richtext documents"
+  },
+  "mimes": [
+    "^text\/(.*)"
+  ],
+  "files": [
+    "main.js"
+  ]
+}
