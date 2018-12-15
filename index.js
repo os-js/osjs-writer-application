@@ -44,10 +44,27 @@ import {
   Iframe
 } from '@osjs/gui';
 
+const defaultColor = '#000000';
+
+/*
+ * Utils
+ */
+const getColor = str => {
+  const matches = str.replace(/\s+/g, '').match(/^rgba?\((.*)\)/);
+  if (matches.length) {
+    const [r, g, b] = matches[1].split(',');
+
+    return {r, g, b};
+  }
+
+  return str;
+};
+
 /*
  * Base RichText template
  */
-const template = (proc, s) => `<!DOCTYPE html>
+const template = (proc, s) => `
+<!DOCTYPE html>
 <html>
   <head>
     <script type="text/javascript">
@@ -66,6 +83,10 @@ const template = (proc, s) => `<!DOCTYPE html>
       height: 100%;
       margin: 0;
       padding: 0;
+    }
+    body {
+      color: ${defaultColor};
+      background: #fff;
     }
     </style>
   </head>
@@ -87,7 +108,7 @@ const ColorBox = (props) => h('div', {}, [
     style: {
       width: '1em',
       height: '1em',
-      background: '#000'
+      background: props.color || '#fff'
     }
   })
 ]);
@@ -152,13 +173,13 @@ const toolbar = [[{
 }], [{
   title: 'Foreground',
   command: 'foreColor',
-  element: () => h(ColorBox),
-  callback: (state, actions, command) => actions.selectColor(command)
+  element: (state) => h(ColorBox, {color: state.props.foreColor}),
+  callback: (state, actions, type) => actions.selectColor({type, color: state.props.foreColor})
 }, {
   title: 'Background',
   command: 'hiliteColor',
   element: () => h(ColorBox),
-  callback: (state, actions, command) => actions.selectColor(command)
+  callback: (state, actions, type) => actions.selectColor({type, color: state.props.hiliteColor})
 }, {
   title: 'Font',
   element: () => 'Font',
@@ -185,7 +206,7 @@ const createApplication = (core, proc, basic) => ($content, win) => {
           actions.textCommand(b.command);
         }
       }
-    }, b.element ? b.element() : []));
+    }, b.element ? b.element(state, actions, b.command) : []));
 
     return h(ToolbarContainer, {}, buttons);
   });
@@ -208,7 +229,9 @@ const createApplication = (core, proc, basic) => ($content, win) => {
     ]);
 
   return app({
-    props: {}
+    props: {
+      foreColor: defaultColor
+    }
   }, {
     save: () => state => {
       if (proc.args.file) {
@@ -235,7 +258,7 @@ const createApplication = (core, proc, basic) => ($content, win) => {
 
     setDocument: str => () => proc.emit('richtext:write', str),
 
-    selectColor: type => () => proc.emit('tool:colordialog', type),
+    selectColor: ({type, color}) => () => proc.emit('tool:colordialog', type, color),
     selectFont: () => () => proc.emit('tool:fontdialog'),
 
     setProps: props => state => ({
@@ -282,6 +305,18 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     defaultFilename: 'New Document.txt'
   });
 
+  const createDialog = (name, args, callback) =>
+    core.make('osjs/dialog', name, args, {
+      parent: win,
+      attributes: {
+        modal: true
+      }
+    }, (btn, value) => {
+      if (btn === 'ok') {
+        callback(value);
+      }
+    });
+
   win.render(($content, win) => {
     const ha = createApplication(core, proc, basic)($content, win);
 
@@ -320,27 +355,23 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     basic.init();
   });
 
-  proc.on('tool:colordialog', (command) => {
-    core.make('osjs/dialog', 'color', {}, (btn, value) => {
-      if (btn === 'ok') {
-        proc.emit('richtext:command', command, false, value.hex);
-      }
-    });
-  });
+  proc.on('tool:colordialog', (command, color) =>
+    createDialog('color', {
+      color: getColor(color)
+    }, (value) => {
+      proc.emit('richtext:command', command, false, value.hex);
+    }));
 
-  proc.on('tool:fontdialog', () => {
-    core.make('osjs/dialog', 'font', {}, (btn, value) => {
-      if (btn === 'ok') {
-        proc.emit('richtext:command', 'fontName', false, value.name);
-        proc.emit('richtext:command', 'fontSize', false, value.size);
-      }
-    });
-  });
+  proc.on('tool:fontdialog', () =>
+    createDialog('font', {}, (value) => {
+      proc.emit('richtext:command', 'fontName', false, value.name);
+      proc.emit('richtext:command', 'fontSize', false, value.size);
+    }));
 
   proc.on('destroy', () => basic.destroy());
 
   const valueMap = {
-    '': undefined,
+    '': null,
     'false': false,
     'true': true
   };
@@ -355,7 +386,7 @@ osjs.register(applicationName, (core, args, options, metadata) => {
           const value = iframeDocument.queryCommandValue(name);
 
           return Object.assign({
-            [name]: typeof value === undefined ? undefined : valueMap[value]
+            [name]: typeof valueMap[value] === 'undefined' ? value : valueMap[value]
           }, carry);
         }, {});
 
