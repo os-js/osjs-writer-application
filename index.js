@@ -393,6 +393,8 @@ osjs.register(applicationName, (core, args, options, metadata) => {
         console.debug(states);
 
         proc.emit('ui:update', states);
+
+        core.make('osjs/contextmenu').hide();
       }
     }
   });
