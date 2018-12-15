@@ -165,11 +165,11 @@ const toolbar = [[{
 }], [{
   title: 'Indent less',
   icon: 'format-indent-less',
-  command: 'indent'
+  command: 'outdent'
 }, {
   title: 'Indent more',
   icon: 'format-indent-more',
-  command: 'outdent'
+  command: 'indent'
 }], [{
   title: 'Foreground',
   command: 'foreColor',
