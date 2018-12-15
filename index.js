@@ -31,8 +31,6 @@
 // TODO: Check selection and update toolbar UI
 // TODO: Update dialogs based on selection
 // TODO: More options
-// TODO: Localization
-// TODO: CUstom icon
 
 import osjs from 'osjs';
 import {h, app} from 'hyperapp';
