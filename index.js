@@ -32,16 +32,17 @@ import {h, app} from 'hyperapp';
 import {Box, TextareaField, Menubar, MenubarItem} from '@osjs/gui';
 
 // File menu
-const createMenu = (current, actions) => ([
-  {label: 'New', onclick: () => actions.menuNew()},
-  {label: 'Open', onclick: () => actions.menuOpen()},
-  {label: 'Save', disabled: !current, onclick: () => actions.menuSave()},
-  {label: 'Save As...', onclick: () => actions.menuSaveAs()},
-  {label: 'Quit', onclick: () => actions.menuQuit()}
+const createMenu = (current, actions, _) => ([
+  {label: _('LBL_NEW'), onclick: () => actions.menuNew()},
+  {label: _('LBL_OPEN'), onclick: () => actions.menuOpen()},
+  {label: _('LBL_SAVE'), disabled: !current, onclick: () => actions.menuSave()},
+  {label: _('LBL_SAVEAS'), onclick: () => actions.menuSaveAs()},
+  {label: _('LBL_QUIT'), onclick: () => actions.menuQuit()}
 ]);
 
 // OS.js application
 const createApplication = (core, proc, win, $content) => {
+  const _ = core.make('osjs/locale').translate;
   const vfs = core.make('osjs/vfs');
   const basic = core.make('osjs/basic-application', proc, win, {
     defaultFilename: 'New File.txt'
@@ -69,7 +70,7 @@ const createApplication = (core, proc, win, $content) => {
     menu: ev => (state, actions) => {
       core.make('osjs/contextmenu').show({
         position: ev.target,
-        menu: createMenu(proc.args.file, actions)
+        menu: createMenu(proc.args.file, actions, _)
       });
     },
 
@@ -83,7 +84,7 @@ const createApplication = (core, proc, win, $content) => {
       h(Menubar, {}, [
         h(MenubarItem, {
           onclick: ev => actions.menu(ev)
-        }, 'File')
+        }, _('LBL_FILE'))
       ]),
       h(TextareaField, {
         box: {grow: 1},
