@@ -49,11 +49,29 @@ import {
 /*
  * Base RichText template
  */
-const template = s => `<!DOCTYPE html>
+const template = (proc, s) => `<!DOCTYPE html>
 <html>
   <head>
+    <script type="text/javascript">
+      function _UpdateUI_() {
+        top.postMessage({
+          pid: ${proc.pid},
+          args: [{
+            event: 'query'
+          }]
+        }, '*');
+      }
+    </script>
+    <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    </style>
   </head>
-  <body contentEditable="true">${s}</body>
+  <body contentEditable="true" onmouseup="_UpdateUI_()" ontouchend="_UpdateUI_()">${s}</body>
 </html>`;
 
 /*
@@ -135,12 +153,14 @@ const toolbar = [[{
   command: 'outdent'
 }], [{
   title: 'Foreground',
+  command: 'foreColor',
   element: () => h(ColorBox),
-  callback: (state, actions) => actions.selectColor('foreground')
+  callback: (state, actions, command) => actions.selectColor(command)
 }, {
   title: 'Background',
+  command: 'hiliteColor',
   element: () => h(ColorBox),
-  callback: (state, actions) => actions.selectColor('background')
+  callback: (state, actions, command) => actions.selectColor(command)
 }, {
   title: 'Font',
   element: () => 'Font',
@@ -159,11 +179,12 @@ const createApplication = (core, proc, basic) => ($content, win) => {
     const buttons = t.map(b => h(Button, {
       title: b.title,
       icon: b.icon ? icon(b.icon) : undefined,
+      active: state.props[b.command] === true,
       onclick: () => {
-        if (b.command) {
+        if (b.callback) {
+          b.callback(state, actions, b.command);
+        } else if (b.command) {
           actions.textCommand(b.command);
-        } else if (b.callback) {
-          b.callback(state, actions);
         }
       }
     }, b.element ? b.element() : []));
@@ -189,6 +210,7 @@ const createApplication = (core, proc, basic) => ($content, win) => {
     ]);
 
   return app({
+    props: {}
   }, {
     save: () => state => {
       if (proc.args.file) {
@@ -217,6 +239,10 @@ const createApplication = (core, proc, basic) => ($content, win) => {
 
     selectColor: type => () => proc.emit('tool:colordialog', type),
     selectFont: () => () => proc.emit('tool:fontdialog'),
+
+    setProps: props => state => ({
+      props: Object.assign(state.props, props)
+    }),
 
     menuNew: () => state => basic.createNew(),
     menuOpen: () => state => basic.createOpenDialog(),
@@ -264,6 +290,8 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     basic.on('new-file', () => ha.setDocument(''));
     basic.on('save-file', ha.save);
     basic.on('open-file', ha.load);
+
+    proc.on('ui:update', props => ha.setProps(props));
   });
 
   proc.on('richtext:command', (command, ...args) => {
@@ -275,7 +303,7 @@ osjs.register(applicationName, (core, args, options, metadata) => {
   proc.on('richtext:write', str => {
     if (iframeDocument) {
       iframeDocument.open();
-      iframeDocument.write(template(str));
+      iframeDocument.write(template(proc, str));
       iframeDocument.close();
     }
   });
@@ -294,12 +322,10 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     basic.init();
   });
 
-  proc.on('tool:colordialog', (type) => {
+  proc.on('tool:colordialog', (command) => {
     core.make('osjs/dialog', 'color', {}, (btn, value) => {
       if (btn === 'ok') {
-        const commandColor = type === 'foreground' ? 'foreColor' : 'hiliteColor';
-
-        proc.emit('richtext:command', commandColor, false, value.hex);
+        proc.emit('richtext:command', command, false, value.hex);
       }
     });
   });
@@ -314,6 +340,33 @@ osjs.register(applicationName, (core, args, options, metadata) => {
   });
 
   proc.on('destroy', () => basic.destroy());
+
+  const valueMap = {
+    '': undefined,
+    'false': false,
+    'true': true
+  };
+
+  proc.on('message', data => {
+    if (data.event === 'query') {
+      if (iframeDocument && iframeDocument.queryCommandValue) {
+        const checks = [].concat(...toolbar).filter(iter => !!iter.command)
+          .map(iter => iter.command);
+
+        const states = checks.reduce((carry, name) => {
+          const value = iframeDocument.queryCommandValue(name);
+
+          return Object.assign({
+            [name]: typeof value === undefined ? undefined : valueMap[value]
+          }, carry);
+        }, {});
+
+        console.debug(states);
+
+        proc.emit('ui:update', states);
+      }
+    }
+  });
 
   return proc;
 });
