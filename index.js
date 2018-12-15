@@ -28,8 +28,6 @@
  * @licence Simplified BSD License
  */
 
-// TODO: Check selection and update toolbar UI
-// TODO: Update dialogs based on selection
 // TODO: More options
 
 import osjs from 'osjs';
@@ -50,11 +48,13 @@ const defaultColor = '#000000';
  * Utils
  */
 const getColor = str => {
-  const matches = str.replace(/\s+/g, '').match(/^rgba?\((.*)\)/);
-  if (matches.length) {
-    const [r, g, b] = matches[1].split(',');
+  if (str) {
+    const matches = str.replace(/\s+/g, '').match(/^rgba?\((.*)\)/);
+    if (matches.length) {
+      const [r, g, b] = matches[1].split(',');
 
-    return {r, g, b};
+      return {r, g, b};
+    }
   }
 
   return str;
@@ -85,6 +85,7 @@ const template = (proc, s) => `
       padding: 0;
     }
     body {
+    font-family: 'arial',
       color: ${defaultColor};
       background: #fff;
     }
@@ -230,6 +231,8 @@ const createApplication = (core, proc, basic) => ($content, win) => {
 
   return app({
     props: {
+      fontName: 'arial',
+      fontSize: '1pt',
       foreColor: defaultColor
     }
   }, {
@@ -259,7 +262,7 @@ const createApplication = (core, proc, basic) => ($content, win) => {
     setDocument: str => () => proc.emit('richtext:write', str),
 
     selectColor: ({type, color}) => () => proc.emit('tool:colordialog', type, color),
-    selectFont: () => () => proc.emit('tool:fontdialog'),
+    selectFont: () => state => proc.emit('tool:fontdialog', state.props),
 
     setProps: props => state => ({
       props: Object.assign(state.props, props)
@@ -362,11 +365,24 @@ osjs.register(applicationName, (core, args, options, metadata) => {
       proc.emit('richtext:command', command, false, value.hex);
     }));
 
-  proc.on('tool:fontdialog', () =>
-    createDialog('font', {}, (value) => {
+  proc.on('tool:fontdialog', props => {
+    createDialog('font', {
+      // TODO: Style
+      minSize: 1,
+      maxSize: 12,
+      size: props.fontSize,
+      name: props.fontName,
+      unit: 'pt',
+      fonts: [
+        'arial',
+        'sans-serif',
+        'monospace'
+      ]
+    }, (value) => {
       proc.emit('richtext:command', 'fontName', false, value.name);
       proc.emit('richtext:command', 'fontSize', false, value.size);
-    }));
+    });
+  });
 
   proc.on('destroy', () => basic.destroy());
 
@@ -380,7 +396,11 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     if (data.event === 'query') {
       if (iframeDocument && iframeDocument.queryCommandValue) {
         const checks = [].concat(...toolbar).filter(iter => !!iter.command)
-          .map(iter => iter.command);
+          .map(iter => iter.command)
+          .concat([
+            'fontFamily',
+            'fontSize'
+          ]);
 
         const states = checks.reduce((carry, name) => {
           const value = iframeDocument.queryCommandValue(name);
@@ -390,7 +410,7 @@ osjs.register(applicationName, (core, args, options, metadata) => {
           }, carry);
         }, {});
 
-        console.debug(states);
+        console.debug(checks, states);
 
         proc.emit('ui:update', states);
 
