@@ -33,6 +33,7 @@
 import osjs from 'osjs';
 import {h, app} from 'hyperapp';
 import {name as applicationName} from './metadata.json';
+import rtfToHtml from '@iarna/rtf-to-html';
 import {
   Box,
   Menubar,
@@ -60,6 +61,16 @@ const getColor = str => {
   return str;
 };
 
+const isRtf = item => item && item.mime === 'application/rtf';
+
+const decode = str => new Promise((resolve, reject) => {
+  rtfToHtml.fromString(str, {
+    template: (doc, defaults, content) => content
+  }, (err, doc) => {
+    return err ? reject(err) : resolve(doc);
+  });
+});
+
 /*
  * Base RichText template
  */
@@ -67,6 +78,7 @@ const template = (proc, s) => `
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8" />
     <script type="text/javascript">
       function _UpdateUI_() {
         top.postMessage({
@@ -85,9 +97,11 @@ const template = (proc, s) => `
       padding: 0;
     }
     body {
-    font-family: 'arial',
+      font-family: 'arial';
       color: ${defaultColor};
       background: #fff;
+      padding: 20pt;
+      box-sizing: border-box;
     }
     </style>
   </head>
@@ -116,6 +130,7 @@ const ColorBox = (props) => h('div', {}, [
 
 const RichText = (props) => h(Iframe, Object.assign({
   box: {
+    margin: false,
     grow: 1,
     shrink: 1,
   }
@@ -212,6 +227,19 @@ const createApplication = (core, proc, basic) => ($content, win) => {
     return h(ToolbarContainer, {}, buttons);
   });
 
+
+  const createMutateSaveDialog = () => {
+    const re = str => str.replace(/\.rtf$/i, '.doc');
+
+    basic.createSaveDialog({
+      file: Object.assign({}, proc.args.file, {
+        filename: re(proc.args.file.filename),
+        path: re(proc.args.file.path),
+        mime: 'application/msword'
+      })
+    });
+  };
+
   const view = (state, actions) =>
     h(Box, {}, [
       h(Menubar, {}, [
@@ -246,6 +274,7 @@ const createApplication = (core, proc, basic) => ($content, win) => {
 
     load: item => (state, actions) => {
       vfs.readfile(item)
+        .then(contents => isRtf(item) ? decode(contents) : contents)
         .then(contents => actions.setDocument(contents))
         .catch(error => console.error(error)); // FIXME: Dialog
     },
@@ -270,8 +299,20 @@ const createApplication = (core, proc, basic) => ($content, win) => {
 
     menuNew: () => state => basic.createNew(),
     menuOpen: () => state => basic.createOpenDialog(),
-    menuSave: () => (state, actions) => actions.save(),
-    menuSaveAs: () => state => basic.createSaveDialog(),
+    menuSave: () => (state, actions) => {
+      if (isRtf(proc.args.file)) {
+        createMutateSaveDialog();
+      } else {
+        actions.save();
+      }
+    },
+    menuSaveAs: () => state => {
+      if (isRtf(proc.args.file)) {
+        createMutateSaveDialog();
+      } else {
+        basic.createSaveDialog();
+      }
+    },
     menuQuit: () => state => proc.destroy()
   }, view, $content);
 };
@@ -305,7 +346,8 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     });
 
   const basic = core.make('osjs/basic-application', proc, win, {
-    defaultFilename: 'New Document.doc'
+    defaultFilename: 'New Document.doc',
+    saveMimeTypes: ['application/msword']
   });
 
   const createDialog = (name, args, callback) =>
@@ -409,8 +451,6 @@ osjs.register(applicationName, (core, args, options, metadata) => {
             [name]: typeof valueMap[value] === 'undefined' ? value : valueMap[value]
           }, carry);
         }, {});
-
-        console.debug(checks, states);
 
         proc.emit('ui:update', states);
 
