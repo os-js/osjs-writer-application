@@ -1,6 +1,6 @@
 {
   "name": "@osjs/writer-application",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "OS.js v3 Writer Application",
   "files": [
     "dist/",
