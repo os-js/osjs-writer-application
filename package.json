@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@iarna/rtf-to-html": "^1.1.0",
-    "@osjs/gui": "^4.0.12",
+    "@osjs/gui": "^4.0.30",
     "hyperapp": "^1.2.9"
   },
   "devDependencies": {
