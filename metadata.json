@@ -4,11 +4,13 @@
   "icon": "icon.png",
   "title": {
     "en_EN": "Writer",
-    "pt_BR": "Escritora"
+    "pt_BR": "Escritora",
+    "fr_FR": "Editeur"
   },
   "description": {
     "en_EN": "Edit richtext documents",
-    "pt_BR": "Escreva documentos de formato texto"
+    "pt_BR": "Escreva documentos de formato texto",
+    "fr_FR": "Editeur de documents au format texte"
   },
   "mimes": [
     "^text\/(.*)",
