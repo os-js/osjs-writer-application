@@ -52,7 +52,7 @@ const defaultColor = '#000000';
  */
 const getColor = str => {
   if (str) {
-    const matches = str.replace(/\s+/g, '').match(/^rgba?\((.*)\)/);
+    const matches = str.replace(/\s+/g, '').match(/^rgba?\((.*)\)/) || [];
     if (matches.length) {
       const [r, g, b] = matches[1].split(',');
 
