@@ -30,6 +30,8 @@
 
 // TODO: More options
 
+import * as translations from './locales.js';
+
 import osjs from 'osjs';
 import {h, app} from 'hyperapp';
 import {name as applicationName} from './metadata.json';
@@ -154,62 +156,62 @@ const createMenu = (current, actions, _) => ([
 /*
  * Toolbar Elements
  */
-const toolbar = [[{
-  title: 'Strong',
+const createToolbar = (__) => ([[{
+  title: __('LBL_WRITER_STRONG'),
   icon: 'format-text-bold',
   command: 'bold'
 }, {
-  title: 'Italic',
+  title: __('LBL_WRITER_ITALIC'),
   icon: 'format-text-italic',
   command: 'italic'
 }, {
-  title: 'Underline',
+  title: __('LBL_WRITER_UNDERLINE'),
   icon: 'format-text-underline',
   command: 'underline'
 }, {
-  title: 'Throughline',
+  title: __('LBL_WRITER_THROUGHLINE'),
   icon: 'format-text-strikethrough',
   command: 'strikeThrough'
 }], [{
-  title: 'Left justify',
+  title: __('LBL_WRITER_LEFT_JUSTIFY'),
   icon: 'format-justify-left',
   command: 'justifyLeft'
 }, {
-  title: 'Center justify',
+  title: __('LBL_WRITER_CENTER_JUSTIFY'),
   icon: 'format-justify-center',
   command: 'justifyCenter'
 }, {
-  title: 'Right justify',
+  title: __('LBL_WRITER_RIGHT_JUSTIFY'),
   icon: 'format-justify-right',
   command: 'justifyRight'
 }], [{
-  title: 'Indent less',
+  title: __('LBL_WRITER_INDENT_LESS'),
   icon: 'format-indent-less',
   command: 'outdent'
 }, {
-  title: 'Indent more',
+  title: __('LBL_WRITER_INDENT_MORE'),
   icon: 'format-indent-more',
   command: 'indent'
 }], [{
-  title: 'Foreground',
+  title: __('LBL_WRITER_FOREGROUND'),
   command: 'foreColor',
   element: (state) => h(ColorBox, {color: state.props.foreColor}),
   callback: (state, actions, type) => actions.selectColor({type, color: state.props.foreColor})
 }, {
-  title: 'Background',
+  title: __('LBL_WRITER_BACKGROUND'),
   command: 'hiliteColor',
   element: () => h(ColorBox),
   callback: (state, actions, type) => actions.selectColor({type, color: state.props.hiliteColor})
 }, {
-  title: 'Font',
-  element: () => 'Font',
+  title: __('LBL_WRITER_FONT'),
+  element: () => __('LBL_WRITER_FONT'),
   callback: (state, actions) => actions.selectFont()
-}]];
+}]]);
 
 /*
  * Main Window Application
  */
-const createApplication = (core, proc, basic) => ($content, win) => {
+const createApplication = (core, proc, basic, toolbar) => ($content, win) => {
   const _ = core.make('osjs/locale').translate;
   const {icon} = core.make('osjs/theme');
   const vfs = core.make('osjs/vfs');
@@ -230,7 +232,6 @@ const createApplication = (core, proc, basic) => ($content, win) => {
 
     return h(ToolbarContainer, {}, buttons);
   });
-
 
   const createMutateSaveDialog = () => {
     const re = str => str.replace(/\.rtf$/i, '.doc');
@@ -327,8 +328,9 @@ const createApplication = (core, proc, basic) => ($content, win) => {
 osjs.register(applicationName, (core, args, options, metadata) => {
   let iframeDocument;
 
-  const title = core.make('osjs/locale')
-    .translatableFlat(metadata.title);
+  const title = core.make('osjs/locale').translatableFlat(metadata.title);
+  const __ = core.make('osjs/locale').translatable(translations);
+  const toolbar = createToolbar(__);
 
   const proc = core.make('osjs/application', {args, options, metadata});
 
@@ -367,7 +369,7 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     });
 
   win.render(($content, win) => {
-    const ha = createApplication(core, proc, basic)($content, win);
+    const ha = createApplication(core, proc, basic, toolbar)($content, win);
 
     basic.on('new-file', () => ha.setDocument(''));
     basic.on('save-file', ha.save);
