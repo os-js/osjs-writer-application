@@ -74,7 +74,7 @@ const decode = str => new Promise((resolve, reject) => {
 /*
  * Base RichText template
  */
-const template = (proc, s) => `
+const template = (proc, win, s) => `
 <!DOCTYPE html>
 <html>
   <head>
@@ -82,9 +82,13 @@ const template = (proc, s) => `
     <script type="text/javascript">
       function _UpdateUI_() {
         top.postMessage({
-          pid: ${proc.pid},
-          args: [{
-            event: 'query'
+          name: 'osjs/iframe:message',
+          params: [{
+            pid: ${proc.pid},
+            wid: ${win.wid},
+            args: [{
+              event: 'query'
+            }]
           }]
         }, '*');
       }
@@ -381,7 +385,7 @@ osjs.register(applicationName, (core, args, options, metadata) => {
   proc.on('richtext:write', str => {
     if (iframeDocument) {
       iframeDocument.open();
-      iframeDocument.write(template(proc, str));
+      iframeDocument.write(template(proc, win, str));
       iframeDocument.close();
     }
   });
@@ -434,7 +438,7 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     'true': true
   };
 
-  proc.on('message', data => {
+  win.on('iframe:get', data => {
     if (data.event === 'query') {
       if (iframeDocument && iframeDocument.queryCommandValue) {
         const checks = [].concat(...toolbar).filter(iter => !!iter.command)
