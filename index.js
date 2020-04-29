@@ -50,7 +50,7 @@ const defaultColor = '#000000';
 /*
  * Utils
  */
-const getColor = str => {
+const getColor = (str, defaultValue) => {
   if (str) {
     const matches = str.replace(/\s+/g, '').match(/^rgba?\((.*)\)/) || [];
     if (matches.length) {
@@ -60,7 +60,7 @@ const getColor = str => {
     }
   }
 
-  return str;
+  return str || defaultValue;
 };
 
 const isRtf = item => item && item.mime === 'application/rtf';
@@ -408,7 +408,7 @@ osjs.register(applicationName, (core, args, options, metadata) => {
 
   proc.on('tool:colordialog', (command, color) =>
     createDialog('color', {
-      color: getColor(color)
+      color: getColor(color, command === 'hiliteColor' ? {r: 255, g: 255, b: 255} : undefined)
     }, (value) => {
       proc.emit('richtext:command', command, false, value.hex);
     }));
@@ -440,6 +440,10 @@ osjs.register(applicationName, (core, args, options, metadata) => {
     'true': true
   };
 
+  const alternateMap = {
+    hiliteColor: 'backcolor'
+  };
+
   win.on('iframe:get', data => {
     if (data.event === 'query') {
       if (iframeDocument && iframeDocument.queryCommandValue) {
@@ -451,7 +455,10 @@ osjs.register(applicationName, (core, args, options, metadata) => {
           ]);
 
         const states = checks.reduce((carry, name) => {
-          const value = iframeDocument.queryCommandValue(name);
+          let value = iframeDocument.queryCommandValue(name);
+          if (!value && alternateMap[name]) {
+            value = iframeDocument.queryCommandValue(alternateMap[name]);
+          }
 
           return Object.assign({
             [name]: typeof valueMap[value] === 'undefined' ? value : valueMap[value]
